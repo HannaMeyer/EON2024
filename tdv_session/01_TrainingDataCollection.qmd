@@ -22,6 +22,7 @@ library(kableExtra)
 library(dplyr)
 library(rprojroot)
 library(patchwork)
+library(rmarkdown)
 ```
 
 # Data sets
