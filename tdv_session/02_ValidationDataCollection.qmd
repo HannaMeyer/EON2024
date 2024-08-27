@@ -13,6 +13,7 @@ library(sf)
 library(terra)
 library(ggplot2)
 library(rprojroot)
+library(patchwork)
 wd=paste0(find_rstudio_root_file(),"/tdv_session/data/")
 
 ```
@@ -183,7 +184,7 @@ RMSE_3 <- rep(0,k)
 
 for (i in 1:k) {
   print(i)
-  p1 = sf::st_sample(np_boundary,size=n)
+  p1 = sf::st_sample(np_boundary,size=n,type='regular')
   error<- terra::extract(dif,vect(p1))
   RMSE_3[i] <- sqrt(mean((error$dif)^2,na.rm=T))
 }
@@ -200,3 +201,112 @@ ggplot(data=df,aes(x=x, fill=y))+
                        color ='black')
 
 ```
+
+# Evaluating the AGB-Model 
+
+## Systematic sample to collect reference data for map validation
+
+To validate the map we use a systematic sample grid. In a real world
+application we do not know the true population values. Therefore, field
+work would be needed to collect reference data at the selected sample
+points. In this workshop we assume that the agp_pop map represents the
+true value without any errors. Thus, we don't need to go to field but we
+can sample the data by extracting the true values from the map at the
+sample locations.
+
+```{r Sample, cache=TRUE}
+# we will use n=100 sample plots
+n=100
+p1 = sf::st_sample(np_boundary,size=n,type='regular')
+
+ggplot()+geom_sf(data=np_boundary,fill=NA)+
+  geom_sf(data=p1)
+```
+
+At each sample point we extract the predicted and observed AGB value.
+
+```{r extract}
+obs <- terra::extract(agb_pop,vect(p1))
+names(obs)<-c('ID','obs')
+
+pred <- terra::extract(agb_model,vect(p1))
+names(pred)<-c('ID','pred')
+validation<-data.frame(observed=obs$obs, predicted=pred$pred)
+
+# we need to remove the na values from this dataframe. In real world applications
+# such NA values can,  occur for example at inaccessible field plots.
+
+validation<-validation[complete.cases(validation),]
+
+```
+
+## Assessment of the ABG-model performance
+
+
+```{r Collect Values, cache=TRUE}
+ggplot(data=validation,aes(x=observed, y=predicted))+
+  geom_point(alpha=0.5)+
+  xlab('Observed AGB t/ha')+ylab('Predicted AGB t/ha')
+```
+
+### Sample RMSE
+Again we can use the RMSE to express the mean difference between observed and
+predicted AGB.
+
+```{r RMSE}
+RMSE_sample = sqrt(sum((validation$observed-validation$predicted)^2)/nrow(validation))
+```
+
+The sample RMSE is `r round(RMSE_sample,2)`\* t/ha.
+To better compare the values between different target variables and models is
+can also express as a proportion relative to the mean value of the predictions.
+
+```{r relRMSE}
+rRMSE = RMSE_sample/mean(validation$predicted)
+```
+
+On average we expect that the AGB estimate of our model has an error of 
+`r round(rRMSE,3)*100` %.
+
+### Error distribution
+
+But is this RMSE valid for the entire range of the observed values or do we
+expect higher errors for higher AGB values?
+
+To see how the model performs over target value range we can use the following
+analysis plots.
+
+```{r Model-Performance}
+
+validation$resid<-validation$observed-validation$predicted
+
+p1<-ggplot(data=validation,aes(x=observed, y=predicted))+
+  geom_point(alpha=0.5)+
+  xlab('Observed AGB t/ha')+ylab('Predicted AGB t/ha')+
+  xlim(0,250)+ylim(0,250)+
+  geom_abline(slope=1,intercept = 0)+
+  stat_summary(fun.data= mean_cl_normal) + 
+  geom_smooth(method='lm')
+
+
+
+p2<-ggplot(data=validation,aes(x=observed, y=resid))+
+  geom_point(alpha=0.5)+
+  xlab('Observed AGB t/ha')+ylab('Residuals')+
+  xlim(0,250)+ylim(-50,+50)+
+  geom_abline(slope=0,intercept = 1)
+
+p3<-ggplot(data=validation,aes(x=resid))+
+  geom_histogram(aes(y=..density..),fill='grey',binwidth=10)+
+  xlab('Observed AGB t/ha')+ylab('Density')+
+  xlim(-150,150)+
+  stat_function(fun = dnorm, geom="polygon",args = list(mean = mean(validation$resid), sd = sd(validation$resid)),color='blue',alpha=0.4,fill='blue')+
+  geom_vline(xintercept=0,color='blue')+
+  geom_vline(xintercept=mean(validation$resid),color='red')
+p1+p2+p3+plot_layout(ncol=3)
+
+```
+
+
+
+
