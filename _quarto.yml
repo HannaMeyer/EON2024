@@ -36,7 +36,7 @@ website:
         contents:
           - index.qmd
       - text: "---"
-      - section: "Training Data"
+      - section: "Reference Data Collection"
         contents: 
           - tdv_session/01_TrainingDataCollection.qmd
           - tdv_session/02_ValidationDataCollection.qmd
