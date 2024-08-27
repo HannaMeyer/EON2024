@@ -3,15 +3,14 @@ title: "Collection of validation data in the context of remote sensing based
         forest monitoring"
 subtitle: "Tutorial for the EON Summer School 2024"
 author: Paul Magdon[University of Applied Sciences and Arts (HAWK), paul.magdon@hawk.de]
-date: "2023-29-08"
+date: "2024-08-27"
 ---
 
 
 ```{r setup}
-
-
+rm(list=ls())
 library(sf)
-library(raster)
+library(terra)
 library(ggplot2)
 library(rprojroot)
 wd=paste0(find_rstudio_root_file(),"/tdv_session/data/")
@@ -19,8 +18,6 @@ wd=paste0(find_rstudio_root_file(),"/tdv_session/data/")
 ```
 
 # Introduction
-
-
 In this tutorial we will explore the principles of design-based sampling. The
 simulation part is based on a presentation of Gerad Heuveling from Wageningen 
 University, which he gave in the OpenGeoHub Summer School[https://opengeohub.org/summer-school/ogh-summer-school-2021/].  
@@ -44,9 +41,9 @@ distribution.
 
 np_boundary = st_transform(st_read(paste0(wd,"nlp-harz_aussengrenze.gpkg")),25832)
 
-agb_pop <- raster(paste0(wd,"agb_np_harz_truth.tif"))
+agb_pop <- terra::rast(paste0(wd,"agb_np_harz_truth.tif"))
 
-agb_model <-raster(paste0(wd,"agb_np_harz_model.tif"))
+agb_model <-terra::rast(paste0(wd,"agb_np_harz_model.tif"))
 
 ```
 
@@ -55,10 +52,10 @@ population we can calculate the Root mean Square Error (RMSE) as the difference
 between the model predictions $\hat{z(x_i)}$ and the population map with:
 
 $$
-RMSE = \sqrt{\frac{1}{N}\sum{(z(x_{ctor. Also today there was wind, not good for m3 i})-\hat{z}(x_{i}))^2}}
+RMSE = \sqrt{\frac{1}{N}\sum{(z(x_{})-\hat{z}(x_{i}))^2}}
 $$
 ```{r RMSE}
-RMSE_pop = sqrt(cellStats((agb_pop-agb_model)^2, mean))
+RMSE_pop = as.numeric(sqrt(terra::global((agb_pop-agb_model)^2,fun='mean',na.rm=TRUE)))
 ```
 
 By looking at the difference from the "true" AGB and the difference we get a true
@@ -71,17 +68,19 @@ a similar RMSE. We start with a random sample with $n=100$ sample points.
 
 ```{r RMSEest}
 n=100
-p1 = st_sample(np_boundary,size=n)
-plot(st_geometry(np_boundary))
-plot(p1,add=TRUE,pch=1)
+
+p1 = sf::st_sample(np_boundary,size=n)
+ggplot()+geom_sf(data=np_boundary,fill=NA)+
+  geom_sf(data=p1)
 ```
 
 We can now extract the population values and the model values at the sample
 locations and calculate the RMSE for all sample points.
 
 ```{r RMSE_sample}
-sample <- raster::extract((agb_pop-agb_model),as_Spatial(p1))
-RMSE_est <- sqrt(mean((sample)^2,na.rm=T))
+sample <- terra::extract((agb_pop-agb_model),vect(p1))
+names(sample)<-c('ID','Diff')
+RMSE_est <- sqrt(mean((sample$Diff)^2,na.rm=T))
 ```
 
 The random sample estimates the RMSE as `r round(RMSE_est,2)`. 
@@ -94,8 +93,9 @@ To check if our sample based estimates are unbiased we will repeat the sampling
 $k$ times. 
 
 ```{r simulation}
-dif <- as((agb_pop-agb_model), 'SpatialGridDataFrame')
+dif <- agb_pop-agb_model
 seed<- 12324
+names(dif)<-'dif'
 
 
 k <- 500
@@ -103,12 +103,10 @@ n <- 50
 RMSE <- rep(0,k) 
 
 for (i in 1:k) {
-  #print(i)
-  p1 = spsample(as_Spatial(np_boundary),n=n,type='random')
-  crs(p1)<-crs(dif)
-  #sample <- raster::extract((agb_pop-agb_model),p1)
-  error<-over(p1,dif)$layer
-  RMSE[i] <- sqrt(mean((error)^2,na.rm=T))
+  print(i)
+  p1 = sf::st_sample(np_boundary,size=n)
+  error<- terra::extract(dif,vect(p1))
+  RMSE[i] <- sqrt(mean((error$dif)^2,na.rm=T))
 }
 
 df <- data.frame(x=RMSE, y=rep('a',k))
@@ -116,7 +114,7 @@ df <- data.frame(x=RMSE, y=rep('a',k))
 ggplot(data=df,aes(x=x))+
   geom_density(data=subset(df,y=='a'),
                fill='blue', alpha=0.5)+
-  xlab('RMSE')+geom_vline(xintercept=RMSE_pop,linewidth=1.5,
+  xlab('RMSE (t/ha)')+geom_vline(xintercept=RMSE_pop,linewidth=1.5,
                           color ='black', linetype='longdash')+
   geom_vline(xintercept=mean(df$x),size=1.5,
                           color ='black')
@@ -133,12 +131,10 @@ n <- 100
 RMSE_2 <- rep(0,k) 
 
 for (i in 1:k) {
-  #print(i)
-  p1 = spsample(as_Spatial(np_boundary),n=n,type='random')
-  crs(p1)<-crs(dif)
-  #sample <- raster::extract((agb_pop-agb_model),p1)
-  error<-over(p1,dif)$layer
-  RMSE_2[i] <- sqrt(mean((error)^2,na.rm=T))
+  print(i)
+  p1 = sf::st_sample(np_boundary,size=n)
+  error<- terra::extract(dif,vect(p1))
+  RMSE_2[i] <- sqrt(mean((error$dif)^2,na.rm=T))
 }
 
 df_2 <- data.frame(x=RMSE_2, y=rep('b',k))
@@ -147,7 +143,7 @@ df<-rbind(df,df_2)
 ggplot(data=df,aes(x=x,fill=y))+
   geom_density(alpha=0.5)+
   scale_fill_discrete(labels=c('Random, n=50', 'Random, n=100'))+
-  xlab('RMSE')+geom_vline(xintercept=RMSE_pop,size=1.5,
+  xlab('RMSE (t/ha)')+geom_vline(xintercept=RMSE_pop,size=1.5,
                           color ='black', linetype='longdash')+
   geom_vline(xintercept=mean(df$x),size=1.5,
                           color ='black')
@@ -172,10 +168,10 @@ inventories for the following reasons:
 * Ensures a balanced spatial coverage
 
 ```{r systematicSample}
-p1 = spsample(as_Spatial(np_boundary),n=n,type='regular')
+p1 = sf::st_sample(np_boundary,size=n,type='regular')
 
-plot(np_boundary$geom)
-plot(p1, add=T)
+ggplot()+geom_sf(data=np_boundary,fill=NA)+
+  geom_sf(data=p1)
 ```
 
 
@@ -186,11 +182,10 @@ n <- 100
 RMSE_3 <- rep(0,k) 
 
 for (i in 1:k) {
-  #print(i)
-  p1 = spsample(as_Spatial(np_boundary),n=n,type='regular')
-  crs(p1)<-crs(dif)
-  error<-over(p1,dif)$layer
-  RMSE_3[i] <- sqrt(mean((error)^2,na.rm=T))
+  print(i)
+  p1 = sf::st_sample(np_boundary,size=n)
+  error<- terra::extract(dif,vect(p1))
+  RMSE_3[i] <- sqrt(mean((error$dif)^2,na.rm=T))
 }
 
 df_3<- data.frame(x=RMSE_3, y=rep('c',k))
@@ -199,7 +194,7 @@ df<-rbind(df,df_3)
 ggplot(data=df,aes(x=x, fill=y))+
   geom_density(alpha=0.5)+
   scale_fill_discrete(labels=c('Random, n=50', 'Random, n=100','Systematic, n=100'))+
-  xlab('RMSE')+geom_vline(xintercept=RMSE_pop,size=1.5,
+  xlab('RMSE (t/ha)')+geom_vline(xintercept=RMSE_pop,size=1.5,
                           color ='black', linetype='longdash')+
   geom_vline(xintercept=mean(df$x),size=1.5,
                        color ='black')
