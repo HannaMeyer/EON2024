@@ -6,7 +6,7 @@ author: Paul Magdon[University of Applied Sciences and Arts (HAWK), paul.magdon@
 date: "2024-08-27"
 knitr:
   opts_chunk: 
-    eval: false
+    eval: true
 ---
 
 
@@ -58,7 +58,7 @@ between the model predictions $\hat{z(x_i)}$ and the population map with:
 $$
 RMSE = \sqrt{\frac{1}{N}\sum{(z(x_{})-\hat{z}(x_{i}))^2}}
 $$
-```{r RMSE}
+```{r RMSE_pop}
 RMSE_pop = as.numeric(sqrt(terra::global((agb_pop-agb_model)^2,fun='mean',na.rm=TRUE)))
 ```
 
