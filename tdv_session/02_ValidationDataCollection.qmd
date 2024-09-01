@@ -256,7 +256,7 @@ ggplot(data=validation,aes(x=observed, y=predicted))+
 Again we can use the RMSE to express the mean difference between observed and
 predicted AGB.
 
-```{r RMSE}
+```{r RMSE2}
 RMSE_sample = sqrt(sum((validation$observed-validation$predicted)^2)/nrow(validation))
 ```
 
