@@ -4,6 +4,9 @@ title: "Collection of validation data in the context of remote sensing based
 subtitle: "Tutorial for the EON Summer School 2024"
 author: Paul Magdon[University of Applied Sciences and Arts (HAWK), paul.magdon@hawk.de]
 date: "2024-08-27"
+knitr:
+  opts_chunk: 
+    eval: false
 ---
 
 
