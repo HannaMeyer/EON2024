@@ -33,7 +33,7 @@ comments: false
     -    09:00-12:00 **Excursion with a local forest district manager** to get an introduction to the Harz region and its current situation
     -    12:30 Lunch @ Waldaus
     -    14:00-16:00 **Block 1 Collection of reference data for forest monitoring** in the context of forest monitoring (Paul Magdon, HAWK)
-    -    16:30-18:00h Group Work
+    -    16:30-18:00 Group work
       
 -   Tuesday (Waldhaus & Excursion):
     -   09:00-13:00h **Excursion with NP-Harz** to visit some mire and discuss topics of water retention (Thomas Glinka, NP-Harz)

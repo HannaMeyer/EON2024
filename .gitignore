@@ -4,5 +4,7 @@
 .Ruserdata
 /.quarto
 .github/workflows/quarto.yml
-
+/docs/
 /.quarto/
+
+/.luarc.json
