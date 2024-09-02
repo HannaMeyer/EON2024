@@ -1,6 +1,9 @@
 ---
 title: "Number_Trees_BI_nDOM"
 format: html
+knitr:
+  opts_chunk: 
+    eval: false
 editor: visual
 ---
 
