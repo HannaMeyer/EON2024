@@ -1,6 +1,9 @@
 ---
 title: "Tree detection"
 format: html
+knitr:
+  opts_chunk: 
+    eval: false
 editor: visual
 ---
 
