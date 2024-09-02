@@ -41,6 +41,11 @@ website:
           - tdv_session/01_TrainingDataCollection.qmd
           - tdv_session/02_ValidationDataCollection.qmd
       - text: "---"
+      - section: "Remote Sensing applications in forest management planing"
+        contents: 
+          - R_session/Compare_BI_plots.qmd
+          - R_session/Tree_detection.qmd
+      - text: "---"
       - section: "Microclimate Data Retrieval & Spatial Data Interpolation"
         contents:
           - mc_session/mc1.qmd
