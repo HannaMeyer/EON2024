@@ -10,12 +10,10 @@ editor_options:
   chunk_output_type: console
 ---
 
-
+# Setup & Installation
 
 ```{r setup}
 
-#install.packages("devtools")
-#devtools::install_github("bleutner/RStoolbox")
 library(sf)
 library(RStoolbox)
 library(terra)
@@ -28,14 +26,14 @@ library(patchwork)
 library(rmarkdown)
 ```
 
-# Data sets
+# Data
 
 In this tutorial we will work with a Sentinel-2 scene from 18/06/2022 from the
 National Park, Harz. We will also use the boundary of the National Park to
 define our study area. Before we can start you may download the S2 Scene from
 the following link:
 [S2-download](https://cloud.hawk.de/index.php/s/Sn2f8bg8GQEqJXR/download/S2B_MSIL2A_20220618T102559_N0400_R10_resampled_harz_np.tif).
-Place this file into the data folder of this tutorial. 
+Place this file into the subfolder "/tdv_session/data/" this tutorial. 
 
 ```{r dataimport}
 # create a string containing the current working directory
@@ -53,11 +51,11 @@ s2 <-terra::mask(s2,np_boundary)
 
 # Anaylsing the spectral variablity within the study area
 
-
 If we have no access to prior information on our target variable in the study
 area we can use the spectral variability as a proxy for the variability of the
 target variable. By using the spectral variability as a sampling criterion we 
-also ensure, that we cover the spectral range with our sampling.
+also ensure, that we cover the spectral range and thus the feature space with 
+our samples.
 
 ## Dimension reduction (PCA)
 
@@ -68,6 +66,8 @@ maintaining most of the information, using a principal component analysis (PCA).
 # Calculation of the principlal components using the RStoolbox
 pca<-RStoolbox::rasterPCA(s2,nSamples = 5000, spca=TRUE )
 
+# Check the result
+summary(pca$model)
 
 # Extracting the first three components
 rgb_raster <- subset(pca$map, 1:3)
@@ -99,8 +99,7 @@ summary(pca$model)
 
 ```
 
-
-From the output of the PCA we see that we can capture 92% of the variability
+From the output of the PCA we see that we capture 92% of the variability
 with the first two components. Thus we will only use the PC1 and PC2 for the 
 subsequent analysis.
 
@@ -115,7 +114,6 @@ However, depending on the target variable this value need to be adjusted.
 
 set.seed(2222)
 cluster <- RStoolbox::unsuperClass(pca$map[[c('PC1','PC2')]], nSamples = 100, nClasses = 5, nStarts = 5)
-
 
 ## Plots
 colors <- rainbow(5)
