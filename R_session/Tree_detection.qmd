@@ -65,5 +65,5 @@ out <- vect(out)
 Save tree tops
 
 ```{r}
-writeVector(out, here("R_session", "output","ttops_ndom_.gpkg") overwrite=TRUE)
+writeVector(out, here("R_session", "output","ttops_ndom_.gpkg"), overwrite=TRUE)
 ```
